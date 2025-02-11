@@ -1,6 +1,6 @@
 const char *ssid = "Dlink123";       
 const char *password = "Rt4swe123";  
-const char* ntpServer = "ntp0.ntp-servers.net";
+const char *ntpServer = "ntp0.ntp-servers.net";
 const long  gmtOffset_sec = 0; 
 
 int xwin=0;//начало координат экрана(если экран больше 480х272)
@@ -9,8 +9,8 @@ int ywin=0;
 //uart 
 #define RXPIN0 (gpio_num_t)(44)  //прием данных (g90->панель)
 #define TXPIN1 (gpio_num_t)(43)  //передача данных (панель->g90)
-#define TXPIN2 (gpio_num_t)(6)   //передача данных по cat (CI-V)
-#define RXPIN2 (gpio_num_t)(7)   //прием данных по cat (CI-V)
+#define TXPIN2 (gpio_num_t)(6)   //передача данных по cat
+#define RXPIN2 (gpio_num_t)(7)   //прием данных по cat
 
 #define PTT (gpio_num_t)(15)
 
@@ -72,6 +72,8 @@ void write_parameters(bool first);
 // for touch
 bool tp_control = true;
 bool tp_band = false;
+
+//драйвер емкостного тачскрина
 TAMC_GT911 tp = TAMC_GT911(TOUCH_SDA, TOUCH_SCL, TOUCH_INT, TOUCH_RST, TOUCH_WIDTH, TOUCH_HEIGHT);
 int tp_x,tp_y,tp_size;
 
@@ -104,6 +106,7 @@ uint8_t auxi = 8;
 uint8_t tmp_auxi = 8;
 uint8_t auxo = 15;
 uint8_t tmp_auxo = 15;
+uint8_t rf_gain = 50;
 uint8_t tun_mode =0;//0-tuning, 1-rit
 uint8_t num_filter = 0; //номер текущего фильтра основной селекции
 int smeter = 0;
@@ -408,6 +411,16 @@ struct {
   char* value = (char*)"L/M";
   }flm;
 
+struct {
+  char* b_name =(char*)"RfGn";
+  int w=50;
+  int h=30;
+  int x_min=370+xwin;
+  int x_max=x_min+w+xwin;
+  int y_min=138+ywin;
+  int y_max=y_min+h+ywin;
+  char* value = (char*)"RFGn";
+  }frf;
 
 struct {
   char* b_name =(char*)"BAND";

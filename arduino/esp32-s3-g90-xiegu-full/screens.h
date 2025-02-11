@@ -279,6 +279,17 @@ void draw_temp_value(){
       return;
     }
 
+      if(show_par=="RF_G"){
+      gfx->setTextColor(0b1100011000011000);
+      gfx->setFont(&FreeMonoBold8pt8b);
+      gfx->setTextSize(2);
+      gfx->setCursor(50+xwin,120+ywin);
+      gfx->print("RF Gain: ");gfx->print(rf_gain);
+      gfx->setTextSize(1);
+      return;
+    }
+
+
 }
 
 void drawinfo(){
@@ -422,6 +433,13 @@ if(!locked){
   gfx->fillRoundRect(flm.x_min,flm.y_min,flm.w,flm.h,3,(show_par=="L__M")?0b0110000000001100:0b0000010000000000);
   gfx->setCursor(flm.x_min+5,flm.y_min+18);
   gfx->print(flm.value);
+
+  gfx->setFont(&FreeMonoBold8pt8b);
+  gfx->setTextColor(WHITE);
+  gfx->fillRoundRect(frf.x_min,frf.y_min,frf.w,frf.h,3,(show_par=="RF_G")?0b0110000000001100:0b0000010000000000);
+  gfx->setCursor(frf.x_min+5,frf.y_min+18);
+  gfx->print(frf.value);
+
 
   gfx->setFont(&FreeMonoBold8pt8b);
   gfx->setTextColor(WHITE);

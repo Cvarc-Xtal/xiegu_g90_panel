@@ -53,7 +53,6 @@ void fft_for_display(uint8_t* input){
     sum_fft = 0.0f;
     max_fft = 0.0f;
     min_fft = 1000000000.0f;
-    //for (int i = 0 ; i < NUM_SAMPLE_BUF/2; i++) {
     for (int i = 0 ; i < NUM_SAMPLE_BUF; i++) {
       if(input[i]>=limited_fft)input[i]=limited_fft;
       if (max_fft < input[i])max_fft=input[i];

@@ -34,9 +34,9 @@ struct g90_body{
   uint8_t filter_high_raw = 59;//верхний склон фильтра
   uint8_t filter_low_raw = 5;  //нижний склон фильтра
   //#14
-  uint8_t pad3[5]={0x00, 0x00, 0x00, 0x00, 0x00};
+  uint8_t pad3[5]={0x00, 0x00, 0x00, 0x00, 0x00};//gsoc:{1c,00,33,00,00}
   //#19
-  uint8_t fft_scale = 0;  //1=auto
+  uint8_t fft_scale = 1;  //1=auto
   uint32_t freq2 = 7050000;//VFOb
   //#24
   uint8_t att_mode2 = 1;//0=none,pre=1,att=2
@@ -47,7 +47,7 @@ struct g90_body{
   uint8_t filter_high_raw2 = 59;
   uint8_t filter_low_raw2 = 5;
   //#30
-  uint8_t pad5[5]={0x00,0x00,0x00,0x00,0x00};
+  uint8_t pad5[5]={0x00,0x00,0x00,0x00,0x00};//gsoc:{1d,00,c8,56,17}
   //#35
   uint8_t fft_scale2 = 1;
 
@@ -78,12 +78,13 @@ struct g90_body{
                                   //bit6..0 - vox_gain
   uint8_t ctrl4_vox1 = 0b00000000;//bit7..6 - vox_delay_low
                                   //bit5..0 - vox_anti_gain_high
-  uint8_t ctrl4_vox2 = 0b10010000;//bit7..3 - gain_low
-                                  //bit2..0 - vox_delay_high
+  //#42
+  uint8_t ctrl4_rfgain = 0b10010000;//bit7..3 - rf_gain_low
+                                    //bit2..0 - vox_delay_high
   uint8_t ctrl4_other = 0b00001001;//bit7..4 = 0
-                                  //bit3 - beep_en
-                                  //bit2 - band_stack_full
-                                  //bit1..0 gain_high
+                                   //bit3 - beep_en
+                                   //bit2 - band_stack_full
+                                   //bit1..0 rf_gain_high
   //#44
   uint8_t rf_power = 20;
   uint8_t sql_level = 0;
@@ -94,26 +95,32 @@ struct g90_body{
   //#48
   uint8_t volume = 1;//0-28
   uint8_t mic_gain = 10;//0-20
-  uint8_t unknown1 = 0x10;
+  uint8_t unknown1 = 0x10;//gsoc:{0}
   uint8_t cq_qsk_time_raw = 2;//0-20
   //#52
-  uint8_t unknown2 = 2;
+  uint8_t unknown2 = 2;//gsoc:{0}
   uint8_t mem_ch = 0;//0-20
   
   //#54
   uint8_t ctrl6 = 0b00000000;//bit0 - vfo_b_en. Остальные биты = 0
   uint8_t blank2 = 0;
-  uint8_t unknown3[4] = {0xff, 0xff, 0xff, 0xff};
+  //#56
+  uint8_t unknown3[4] = {0xff, 0xff, 0xff, 0xff};//gsoc:{94,34,2b,b5,14}
   
   //#60
   uint8_t cw_wpm = 15;//5-50 wpm
+  //#61
   uint8_t ctrl7 = 0b10100000;//bit7..4 - cw_ratio_raw
                              //bit3=0
                              //bit2 - cw_mode_b
                              //bit1..0 - cw_mlr
                              
-  uint8_t unknown4[20] = {0xff,0x0f,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x1f,0x00,0x00,0x30,0x00,0x00,0x00,0x00,0x0a,0x32};
-
+  //#62 gsoc:{00,00,00,00,f0,3f,00,00,00,00}
+  uint8_t unknown4[10] = {0xff,0x0f,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff};//
+  
+  //#72 gsoc:{04,00,00,30,00,00,00,00,e5,2b}
+  uint8_t unknown5[10] = {0x1f,0x00,0x00,0x30,0x00,0x00,0x00,0x00,0x0a,0x32};
+  
   //#82
   uint8_t ctrl8_swr = 6;//bit3..0 - swr_threshold_raw
   uint8_t ctrl8_aux = 0b11111000;//bit7..4 aux_out_vol
@@ -121,7 +128,9 @@ struct g90_body{
   //#84
   uint8_t ritval_low = 0;  //значащие все биты
   uint8_t ritval_high = 0; //значащие два мл.бита
-  uint8_t unknown5[6] = {0xff, 0xff, 0x00, 0x00, 0x00, 0x00};
+  
+  //#86 gsoc:{00,00,00,00,f0,3f}
+  uint8_t unknown6[6] = {0xff, 0xff, 0x00, 0x00, 0x00, 0x00};
   //#92
   uint32_t checksum = 0;
 }typedef g90;
@@ -180,7 +189,7 @@ uint32_t get_crc_body(){
 }
 
 bool get_data_from_body(){
-uint32_t check_crc,crc_from_g90;
+
 const uart_port_t uart_num = UART_NUM_0;
 ////////////проверить/////////////////работает!
   size_t length;
@@ -188,8 +197,7 @@ const uart_port_t uart_num = UART_NUM_0;
   if(length < SIZE_BODY_BUF) uart_flush_input(uart_num);
 //////////////////////////////////////
 uart_read_bytes(uart_num, from_body, SIZE_BODY_BUF, 100);
- 
-  check_crc=0;
+  uint32_t check_crc,crc_from_g90; 
   //переворачиваем байты принятой контрольной суммы (1-2-3-4 -> 4-3-2-1)
    for(int i=0;i<4;i++){
       uint32_t tmp = from_body[SIZE_BODY_BUF-1-i];tmp=tmp<<i*8;

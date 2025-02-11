@@ -6,7 +6,6 @@ xSemaphoreHandle xIN;
 void x_in(void *args)
 {
       while(1){
-        
         //
         if (xSemaphoreTake(xIN, portMAX_DELAY)) {
             //берем значения текущих параметров из принятого массива
@@ -78,6 +77,8 @@ static void x_uart_tx(void *args) {
         if(!mic_line)data_to_g90.ctrl3 |= (1 << 2);else data_to_g90.ctrl3 &= ~(1 << 2);
         if(tuning)data_to_g90.ctrl2 |= (1 << 5);else data_to_g90.ctrl2 &= ~(1 << 5);
         if(shutdown_req>2) data_to_g90.ctrl2 |= (1 << 7);else data_to_g90.ctrl2 &= ~(1 << 7);
+        data_to_g90.ctrl4_rfgain = (data_to_g90.ctrl4_rfgain&7)|rf_gain<<3;
+        data_to_g90.ctrl4_other  = (data_to_g90.ctrl4_other&252)|rf_gain>>5;
 
         if(txrx_mode==RX_MODE){//режим приема
             data_to_g90.freq1 = (tun_mode==RIT)?rx_freq:freq;

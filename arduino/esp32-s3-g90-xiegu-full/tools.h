@@ -4,9 +4,9 @@ void value_plus(){
   if(show_par=="F__H"){bandwidth+=50;if(bandwidth>6000)bandwidth=6000;f_high.value=bandwidth;show_time=SHOW_VALUE;}
   if(show_par=="POWR"){rf_power+=1;if(rf_power>20)rf_power=20;tmp_rf_power=rf_power;show_time=SHOW_VALUE;}
   if(show_par=="AUXI"){auxi+=1;if(auxi>15)auxi=15;tmp_auxi=auxi;show_time=SHOW_VALUE;}
-  if(show_par=="AUXO"){auxo+=1;if(auxo>15)auxo=15;tmp_auxo=tmp_auxo;show_time=SHOW_VALUE;}
+  if(show_par=="AUXO"){auxo+=1;if(auxo>15)auxo=15;tmp_auxo=auxo;show_time=SHOW_VALUE;}
   if(show_par=="MICG"){mic_gain+=1;if(mic_gain>20)mic_gain=20;tmp_mic_gain=mic_gain;show_time=SHOW_VALUE;}
-  
+  if(show_par=="RF_G"){rf_gain+=1;if(rf_gain>100)rf_gain=100;show_time=SHOW_VALUE;}
 }
 
 void value_minus(){
@@ -15,8 +15,9 @@ void value_minus(){
   if(show_par=="F__H"){bandwidth-=50;if(bandwidth<indent+200)bandwidth=indent+200;f_high.value=bandwidth;show_time=SHOW_VALUE;}
   if(show_par=="POWR"){rf_power-=1;if(rf_power<1)rf_power=1;tmp_rf_power=rf_power;show_time=SHOW_VALUE;}
   if(show_par=="AUXI"){auxi-=1;if(auxi<0)auxi=0;tmp_auxi=auxi;show_time=SHOW_VALUE;}
-  if(show_par=="AUXO"){auxo-=1;if(auxo<0)auxo=0;tmp_auxo=tmp_auxo;show_time=SHOW_VALUE;}
+  if(show_par=="AUXO"){auxo-=1;if(auxo<0)auxo=0;tmp_auxo=auxo;show_time=SHOW_VALUE;}
   if(show_par=="MICG"){mic_gain-=1;if(mic_gain<0)mic_gain=0;tmp_mic_gain=mic_gain;show_time=SHOW_VALUE;}
+  if(show_par=="RF_G"){rf_gain-=1;if(rf_gain<1)rf_gain=1;show_time=SHOW_VALUE;}
 }
 
 void action() { //обработка нажатий на кнопки
@@ -93,6 +94,7 @@ void change_band() {
   old_band = numband; first = false;
 }
 
+#define BTN_RFG (tp_x>frf.x_min&&tp_x<frf.x_max&&tp_y>frf.y_min&&tp_y<frf.y_max)
 #define BTN_PTT (tp_x>fptt.x_min&&tp_x<fptt.x_max&&tp_y>fptt.y_min&&tp_y<fptt.y_max)
 #define BTN_TUNE (tp_x>ftune.x_min&&tp_x<ftune.x_max&&tp_y>ftune.y_min&&tp_y<ftune.y_max)
 #define BTN_FLM (tp_x>flm.x_min&&tp_x<flm.x_max&&tp_y>flm.y_min&&tp_y<flm.y_max)
@@ -152,6 +154,7 @@ void t_touched(){ //опрос тачскрина
         if(BTN_FLM)        {l_key=19;t_press=true;show_par = "L__M";show_time=SHOW_VALUE;}
         if(BTN_MORE)       {l_key=18;t_press=true;tap_name="MORE";}
         if(BTN_PTT)        {l_key=23;t_press=true;tap_name="CPTT";}
+        if(BTN_RFG)        {t_press=true;show_par = "RF_G";show_time=SHOW_VALUE+5;}
       }
       if(BTN_RIT)         {l_key=7;t_press=true;}//режим отстройки
       if(BTN_FREQ_PLUS && !locked)   {l_key=2;t_press=true;}//+ SR/4 kHz
@@ -229,6 +232,7 @@ void readConfig() {
      13       mic_gain 0..20
      14       filter low
      15       filter high
+     16       rf_gain
      
   */
   int i;
@@ -244,6 +248,7 @@ void readConfig() {
   mic_gain= (uint8_t)(EEPROM.readUInt(i * sizeof(uint32_t)));    if (mic_gain > 20  || mic_gain <= 0)mic_gain = 10; i++;
   indent = (EEPROM.readUInt(i * sizeof(uint32_t)));    if (indent > 750  || indent < 100)indent = 200; i++;
   bandwidth = (EEPROM.readUInt(i * sizeof(uint32_t)));    if (bandwidth > 6000  || bandwidth <= indent+100)bandwidth = 2700; i++;
+  rf_gain = (uint8_t)(EEPROM.readUInt(i * sizeof(uint32_t))); if (rf_gain > 100  || rf_gain < 1) rf_gain=50; i++;
   f_low.value=indent;f_high.value=bandwidth;
   tmp_rf_power=rf_power;
   tmp_mic_gain = mic_gain;
@@ -270,6 +275,7 @@ void write_parameters(bool first) {
      13       mic_gain 0..20
      14       filter low
      15       filter high
+     16       rf_gain
   */
   if(first){
     flag_write_parameters = true;
@@ -294,6 +300,7 @@ void write_parameters(bool first) {
     EEPROM.writeUInt(13 * sizeof(uint32_t), (uint32_t)mic_gain);
     EEPROM.writeUInt(14 * sizeof(uint32_t), (uint32_t)indent);
     EEPROM.writeUInt(15 * sizeof(uint32_t), (uint32_t)bandwidth);
+    EEPROM.writeUInt(16 * sizeof(uint32_t), (uint32_t)rf_gain);
     EEPROM.commit();
     flag_write_parameters = false;
   }
@@ -333,6 +340,10 @@ void x_encoder(void *args)
      if(show_par=="MICG"){
       if (encoderDelta > 0){mic_gain+=1;if(mic_gain>20)mic_gain=20;tmp_mic_gain=mic_gain;show_time=SHOW_VALUE;}
       if (encoderDelta < 0){mic_gain-=1;if(mic_gain<0)mic_gain=0;tmp_mic_gain=mic_gain;show_time=SHOW_VALUE;}
+     }
+     if(show_par=="RF_G"){
+      if (encoderDelta > 0){rf_gain+=1;if(rf_gain>100)rf_gain=100;show_time=SHOW_VALUE;}
+      if (encoderDelta < 0){rf_gain-=1;if(rf_gain<1)rf_gain=1;show_time=SHOW_VALUE;}
      }
      if(show_par=="____"){
       if ((encoderDelta > 0) && (tun_mode == TUN)){freq = freq + step_freq[numstep];if (freq > 39999999)freq = 39999999;bands[numband].freq=freq;rx_freq = freq;}
