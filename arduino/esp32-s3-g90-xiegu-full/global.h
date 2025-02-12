@@ -113,6 +113,7 @@ int smeter = 0;
 int old_smeter = 0;
 int tmp_smeter = 0;
 uint32_t freq = 14200000; //частота настройки
+uint32_t tmpfreq;
 uint32_t rx_freq = freq; //частота приема (RIT)
 uint32_t step_freq[5] = {50,100,500,1000,5000}; //шаг перестройки гц
 uint32_t numband = 8;//номер текущего диапазона
@@ -126,6 +127,7 @@ int bandwidth; //текущая полоса пропускания, отобр�
 int indent;     
 int ptt=0;
 int cat_ptt=0;
+bool swr_scan = false;
 
 uint16_t colors[] = { //
   0b1000000000000000, //0 
@@ -161,12 +163,12 @@ bool t_release = false; //признак отпущенной кнопки на 
 bool l_press = false;   //признак нажатой лев.кнопки
 bool t_press = false;   //признак нажатой кнопки на экране
 
-uint8_t lkey = 0;       //код лев.кнопки для дальн.действия 1..5 (0-нет действия)
+uint8_t lkey = 1;       //код лев.кнопки для дальн.действия 1..5 (0-нет действия)
 
 bool redraw = false;
 int power_button = 1;
 bool wifi = false;
-bool locked = true;
+bool menu = true;
 int n_button = 0;
 uint16_t value_button[8]={0,1985,2672,3028,3266,3438,3571,3677};
 bool flag_exit_setup=false;
@@ -200,23 +202,25 @@ struct band {
   char* name;        // name of band
   uint32_t mode;
   uint8_t att_mode;
+  uint32_t f_min;
+  uint32_t f_max;
 };
 
 #define N_BANDS 13
 struct band bands[N_BANDS] = {
-  1850000,(char *)"160M" ,LSB,2,
-  3700000,(char *)"80M " ,LSB,2,
-  3995000,(char *)"75M " ,AM,0,
-  4850000,(char *)"60M " ,LSB,0,
-  5840000,(char *)"49M " ,AM,0,
-  7100000,(char *)"40M " ,LSB,0,
-  9520000,(char *)"31M " ,AM,0,
-  11670000,(char *)"25M ",AM,0,
-  14200000,(char *)"20M ",USB,1,
-  17780000,(char *)"16M ",AM,1,
-  21200000,(char *)"15M ",USB,1,
-  24920000,(char *)"12M ",AM,1,
-  28350000,(char *)"10M ",USB,1
+  1850000,(char *)"160M" ,LSB,2,1800000,2000000,
+  3700000,(char *)"80M " ,LSB,2,3500000,3800000,
+  3995000,(char *)"75M " ,AM,0,0,0,
+  4850000,(char *)"60M " ,LSB,0,0,0,
+  5840000,(char *)"49M " ,AM,0,0,0,
+  7100000,(char *)"40M " ,LSB,0,7000000,7200000,
+  9520000,(char *)"31M " ,AM,0,0,0,
+  11670000,(char *)"25M ",AM,0,0,0,
+  14200000,(char *)"20M ",USB,1,14000000,14350000,
+  17780000,(char *)"16M ",AM,1,0,0,
+  21200000,(char *)"15M ",USB,1,21000000,21450000,
+  24920000,(char *)"12M ",AM,1,0,0,
+  28350000,(char *)"10M ",USB,1,28000000,29700000,
 };
 ///////////////////////////////////////////////
 //описания экранных кнопок для тачскрина
@@ -421,6 +425,18 @@ struct {
   int y_max=y_min+h+ywin;
   char* value = (char*)"RFGn";
   }frf;
+
+struct {
+  char* b_name =(char*)"Scan";
+  int w=50;
+  int h=30;
+  int x_min=430+xwin;
+  int x_max=x_min+w+xwin;
+  int y_min=138+ywin;
+  int y_max=y_min+h+ywin;
+  char* value = (char*)"Scan";
+  }fscan;
+
 
 struct {
   char* b_name =(char*)"BAND";

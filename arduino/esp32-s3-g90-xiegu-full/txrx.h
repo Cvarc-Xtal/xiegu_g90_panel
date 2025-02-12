@@ -46,13 +46,13 @@ static void x_uart_tx(void *args) {
 
  while(1){
         //Заполняем структуру для отправки в g90
-        if(send_carrier){//несущую на передачу для теста
+        if(send_carrier){//несущую на передачу для теста или сканирования swr
          mic_gain = 0;
          auxi = 0;
          auxo = 0;
-         //rf_power = 1;
+         //rf_power = 7;
          rf_mode = 6;//MFM
-         show_par = "POWR";show_time=SHOW_VALUE;
+         //show_par = "POWR";show_time=SHOW_VALUE;
         }else{
           mic_gain = tmp_mic_gain;
           auxi = tmp_auxi;

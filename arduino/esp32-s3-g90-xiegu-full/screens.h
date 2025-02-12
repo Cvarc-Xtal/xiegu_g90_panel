@@ -23,6 +23,7 @@ void draw_spectr(){//спектр
       int width_b = bandwidth/(i2s_sample_rate_rx/NUM_SAMPLE_BUF);
       int indent_b = indent/(i2s_sample_rate_rx/NUM_SAMPLE_BUF);
       gfx->fillRect(0+xwin,70+ywin,480,108,BLACK);
+      if(!swr_scan){
       for (int i = 0; i<NUM_SAMPLE_BUF;i++){
        y=wp_value[i]/20+5;if(y>102)y=102;
        col_s = 0b0000000101001100;
@@ -50,8 +51,22 @@ void draw_spectr(){//спектр
       if(x>0)gfx->drawLine(p_x,p_y,x+xwin,175-y+ywin,GRAY|0b0100001000001000);//линия по верхушкам спектра
       p_x=x+xwin;p_y=175-y+ywin;
       x++;if(x>503)break;
+      }
+     }else{
+      for(int i=0;i<160;i++){
+        y=swr_value[i]*10;if(y>80)y=80;
+        if(x>0)gfx->drawLine(p_x,p_y,x+xwin,175-y+ywin,0b01000011111101000);//линия по верхушкам спектра
+        p_x=x+xwin;p_y=175-y+ywin;
+        x+=3;
+      }
+      gfx->setFont(&FreeMonoBold8pt8b);gfx->setTextColor(WHITE);
+      gfx->setCursor(3+xwin,170+ywin);gfx->print("1.0");
+      gfx->setCursor(3+xwin,150+ywin);gfx->print("2.0");
+      gfx->setCursor(3+xwin,130+ywin);gfx->print("3.0");
+      gfx->setCursor(3+xwin,110+ywin);gfx->print("4.0");
+      gfx->setCursor(3+xwin, 90+ywin);gfx->print("5.0");
      }
-     if(txrx_mode==TX_MODE || txpower_g90>0){
+     if((txrx_mode==TX_MODE || txpower_g90>0) && !swr_scan){
         gfx->setFont(&FreeMonoBold8pt8b);
         gfx->setTextColor(WHITE);
         gfx->setCursor(3+xwin,84+ywin);
@@ -70,11 +85,11 @@ void draw_waterfall(){ //отображаем массив буферов fft д
     gfx->draw16bitRGBBitmap(x+xwin,i+y+ywin,(uint16_t*)&wp[wp_num[i-1]][0],NUM_SAMPLE_BUF,1);
   }
   gfx->drawFastVLine(x+xwin+pos_fft,y+ywin+1,WP_LINE,YELLOW); //вертикальный маркер текущей частоты
-  if(!locked)gfx->setCursor(300+xwin,85+ywin);else gfx->setCursor(400+xwin,85+ywin);
+  if(!menu)gfx->setCursor(300+xwin,85+ywin);else gfx->setCursor(400+xwin,85+ywin);
   gfx->setTextColor(GREEN);
   gfx->setFont(&CourierCyr6pt8b);
   if(txrx_mode==RX_MODE){gfx->print("-"); gfx->printf("%03d",256-smeter_g90); gfx->print(" dBm");}
-  else{gfx->print((float)smeter_g90/10.0,1);gfx->print("W");}
+  if(txrx_mode==TX_MODE && !swr_scan){gfx->print((float)smeter_g90/10.0,1);gfx->print("W");}
 }
 void draw_service(){
     const char* mod;const char* filtr;const char* tun;const char* type_fir;const char* step;
@@ -96,7 +111,7 @@ void draw_service(){
     if (numstep==2) step = " 500";    
     if (numstep==3) step = "1000";    
     if (numstep==4) step = "5000";
-
+    if(!swr_scan){
         gfx->setFont(&CourierCyr6pt8b);gfx->setTextColor(WHITE,BLACK);
         gfx->setCursor(403+xwin,15+ywin);gfx->print("Mode:");
         gfx->setCursor(403+xwin,31+ywin);gfx->print("Step:");
@@ -109,7 +124,12 @@ void draw_service(){
         gfx->setCursor(436+xwin,31+ywin);gfx->print(step);
         gfx->setCursor(444+xwin,47+ywin);gfx->print((tuner)?"On":"Off");
         gfx->setCursor(436+xwin,63+ywin);gfx->print(agc[agc_speed]);
-
+    }else{
+        gfx->setFont(&FreeMonoBold8pt8b);
+        gfx->setTextColor(WHITE,BLACK);
+        gfx->setCursor(403+xwin,31+ywin);gfx->print("  STOP");
+        gfx->setCursor(403+xwin,47+ywin);gfx->print("  scan");
+    }
         if(tun_mode == RIT)gfx->setTextColor(WHITE,BLACK);else gfx->setTextColor(GRAY|0b0100001000001000,BLACK);
         gfx->setCursor(257+xwin,58+ywin);
         gfx->print("RIT ");gfx->printf("%2d %03d,%02d",  rx_freq/1000000, (rx_freq/1000)%1000, (rx_freq/10)%100 );
@@ -124,11 +144,24 @@ void draw_service(){
       gfx->setFont(&Picopixel);
       gfx->setTextColor(GRAY|0b0100001000001000,BLACK);
       gfx->fillRect(xwin,176+ywin,480,15,BLACK);
-      for(int i=0;i<NUM_SAMPLE_BUF;i+=52){ //шкала видимых частот
-        gfx->setCursor(i+xwin,185+ywin);
-        c_freq=(freq-i2s_sample_rate_rx/2)+hz*i;
-        gfx->printf("%2d %03d,%02d",  c_freq/1000000, (c_freq/1000)%1000, (c_freq/10)%100 );
-       gfx->drawFastVLine(i+xwin,175+ywin,3,GRAY|0b0100001000001000);//маркеры на частотах
+      if(!swr_scan){
+       for(int i=0;i<NUM_SAMPLE_BUF;i+=52){ //шкала видимых частот
+         gfx->setCursor(i+xwin,185+ywin);
+         c_freq=(freq-i2s_sample_rate_rx/2)+hz*i;
+         gfx->printf("%2d %03d,%02d",  c_freq/1000000, (c_freq/1000)%1000, (c_freq/10)%100 );
+         gfx->drawFastVLine(i+xwin,175+ywin,3,GRAY|0b0100001000001000);//маркеры на частотах
+       }
+      }else{
+        int k = 0;
+        for(int i=0;i<160;i++){
+           if(k==0){
+              gfx->setCursor(i*3+xwin,185+ywin);
+              c_freq=swr_freq[i];
+              gfx->printf("%2d %03d,%02d",  c_freq/1000000, (c_freq/1000)%1000, (c_freq/10)%100 );
+              gfx->drawFastVLine(i*3+xwin,175+ywin,3,GRAY|0b0100001000001000);//маркеры на частотах
+              k+=3;
+           }else {k+=3;if(k>52)k=0;}
+        }
       }
 }
 
@@ -175,7 +208,7 @@ void draw_temp_value(){
     gfx->setTextColor(0b1010001010000110);
     gfx->setFont(&Seven_Segment18pt8b);
     gfx->setTextSize(2);
-    if(!locked)gfx->setCursor(100+xwin,150+ywin);else gfx->setCursor(180+xwin,150+ywin);
+    if(!menu)gfx->setCursor(100+xwin,150+ywin);else gfx->setCursor(180+xwin,150+ywin);
     gfx->print(bands[numband].name);
     gfx->setTextSize(1);
     return;
@@ -333,7 +366,7 @@ void peak_down(){//плавно снижаем уровни спектра и п
 }
 
 void screen_control(){
-if(!locked){
+if(!menu && !swr_scan){
  if(!more_menu){
   gfx->setFont(&FreeMonoBold8pt8b);
   gfx->setTextColor(WHITE);
@@ -440,6 +473,12 @@ if(!locked){
   gfx->setCursor(frf.x_min+5,frf.y_min+18);
   gfx->print(frf.value);
 
+  gfx->setFont(&FreeMonoBold8pt8b);
+  gfx->setTextColor(WHITE);
+  gfx->fillRoundRect(fscan.x_min,fscan.y_min,fscan.w,fscan.h,3,(fscan.b_name==tap_name)?0b0110000000001100:0b0000010000000000);
+  gfx->setCursor(fscan.x_min+5,fscan.y_min+18);
+  gfx->print(fscan.value);
+
 
   gfx->setFont(&FreeMonoBold8pt8b);
   gfx->setTextColor(WHITE);
@@ -469,17 +508,17 @@ if(!locked){
     }
   }
 }
-void x_display(){
 
+
+void x_display(){
    draw_smeter();    //отобразить s-метр
-   draw_spectr();    //отобразить спектр
+   draw_spectr();    //отобразить спектр или swr_scan
    draw_service();   //отобразить остальное
    draw_Grid(0+xwin,72+ywin,480,103);//нарисовать сетку на спектре
    draw_temp_value();
    draw_waterfall(); //отобразить панораму
    screen_control(); //кнопки тачскрина
    drawinfo(); //показать fps и др.
-
 }
 
 void screens(uint8_t s){

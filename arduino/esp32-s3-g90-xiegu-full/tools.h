@@ -20,16 +20,23 @@ void value_minus(){
   if(show_par=="RF_G"){rf_gain-=1;if(rf_gain<1)rf_gain=1;show_time=SHOW_VALUE;}
 }
 
+void swr_fill(){
+  int swr_step = (bands[numband].f_max - bands[numband].f_min)/160;
+  for(int i=0;i<160;i++){
+    swr_freq[i]=bands[numband].f_min + swr_step*i;
+  }
+}
+
 void action() { //обработка нажатий на кнопки
   //if (txrx_mode == RX_MODE) { //на экране приема
-    if (lkey == 1) {tp_band=false;if (numband > N_BANDS - 1)numband = 0;tmp_rf_mode=rf_mode=bands[numband].mode;show_time = SHOW_VALUE;send_cat=true;}
+    if (lkey == 1) {tp_band=false;if (numband > N_BANDS - 1)numband = 0;tmp_rf_mode=rf_mode=bands[numband].mode;show_time = SHOW_VALUE;send_cat=true;swr_fill();}
     if (lkey == 2) {if(show_par!="____")value_plus();else{freq += i2s_sample_rate_rx/4;if (freq > 39999999)freq = 39999999;rx_freq=freq;}send_cat=true;}
     if (lkey == 3) {if(show_par!="____")value_minus();else{freq -= i2s_sample_rate_rx/4;if (freq < 1000000)freq = 1000000;rx_freq=freq;}send_cat=true;}
     if (lkey == 4) {}
     if (lkey == 5) {numstep++;if(numstep>4)numstep=0;}
     if (lkey == 6) {rf_mode++;tmp_rf_mode=rf_mode;if(rf_mode>AM)tmp_rf_mode=rf_mode=LSB;send_cat=true;}
     if (lkey == 7) {if (tun_mode == RIT){tun_mode = TUN;rx_freq=freq;}else tun_mode = RIT;}
-    if (lkey == 8) {}
+    if (lkey == 8) {tmpfreq=freq;swr_scan=true;send_carrier=true;menu=false;rf_power=7;}
     if (lkey == 9) {volume+=1;if(volume>28)volume=28;show_time=SHOW_VALUE;}
     if (lkey ==10) {volume-=1;if(volume>28)volume=0;show_time=SHOW_VALUE;}
     if (lkey ==11) {flag_write_parameters = true; show_time = SHOW_VALUE;}//(сохранение текущих парметров)
@@ -41,7 +48,7 @@ void action() { //обработка нажатий на кнопки
     if (lkey ==17) {bands[numband].att_mode++;if(bands[numband].att_mode>2)bands[numband].att_mode=0;}
     if (lkey ==18) {more_menu=!more_menu;}
     if (lkey ==19) {mic_line=!mic_line;}
-    if (lkey ==20) {locked = !locked;fmore.value=(locked)?(char*)"LOCK":(char*)"MORE";}
+    if (lkey ==20) {if(swr_scan)freq=tmpfreq;menu = !menu; swr_scan=false; send_carrier=false;}
     if (lkey ==21) {tuning=true;}
     if (lkey ==22) {tp_band=true;}
     if (lkey ==23) {send_carrier=!send_carrier;}
@@ -69,7 +76,8 @@ void time1() {
 
 void time_001() {
   int static ms001 = 0;
-  int static mut = 0;
+  int static swr_count = 0;
+  static bool swr_switch=false;
   if ((cur_ms < ms001) || ((cur_ms - ms001) > 40 )) {
     ms001 = cur_ms;
     if(txrx_mode==RX_MODE){smeter = map(256-smeter_g90,127,13,0,98);}
@@ -83,6 +91,15 @@ void time_001() {
     if (old_smeter > 150)old_smeter = 150;
     peak_down();//инкремент показателей спектра и панорамы
     if(!power_button){show_par="____";}
+    /////
+    if(!swr_switch && swr_scan)freq=swr_freq[swr_count];
+    if(swr_switch && swr_scan){
+      swr_value[swr_count]=from_body[2]+1;
+      swr_count++;if(swr_count>160)swr_count=0;
+    }
+    swr_switch=!swr_switch;
+    /////
+
   }
 }
 
@@ -94,6 +111,7 @@ void change_band() {
   old_band = numband; first = false;
 }
 
+#define BTN_SCAN (tp_x>fscan.x_min&&tp_x<fscan.x_max&&tp_y>fscan.y_min&&tp_y<fscan.y_max)
 #define BTN_RFG (tp_x>frf.x_min&&tp_x<frf.x_max&&tp_y>frf.y_min&&tp_y<frf.y_max)
 #define BTN_PTT (tp_x>fptt.x_min&&tp_x<fptt.x_max&&tp_y>fptt.y_min&&tp_y<fptt.y_max)
 #define BTN_TUNE (tp_x>ftune.x_min&&tp_x<ftune.x_max&&tp_y>ftune.y_min&&tp_y<ftune.y_max)
@@ -127,12 +145,14 @@ void change_band() {
 #define BTN_VOL_MINUS_FULL  (tp_x>25&&tp_x<220&&tp_y>200&&tp_y<270&&!tp_band)
 
 void t_touched(){ //опрос тачскрина
+    static bool start = true;
     static int l_key=0;
     static int b_key=0;
+    if(start){t_press=true;l_key=1;start=false;}
     tp.read();
     if(tp.isTouched){
       tp_x=tp.points[0].x;tp_y=tp.points[0].y;tp_size=tp.points[0].size;
-      if(!more_menu && !locked){
+      if(!more_menu && !menu && !swr_scan){
         if(BTN_F_LOW)       {t_press=true;show_par = "F__L";show_time=SHOW_VALUE+5;}
         if(BTN_F_HIGH)      {t_press=true;show_par = "F__H";show_time=SHOW_VALUE+5;}      
         if(BTN_RFPOWER)     {t_press=true;show_par = "POWR";show_time=SHOW_VALUE+5;}
@@ -147,7 +167,7 @@ void t_touched(){ //опрос тачскрина
         if(BTN_TUNE)        {l_key=21;t_press=true;tap_name="TUNE";show_par = "TUNE";show_time=SHOW_VALUE;}
         
       }
-      if(more_menu && !locked){
+      if(more_menu && !menu && !swr_scan){
         if(BTN_AUXI)       {t_press=true;show_par = "AUXI";show_time=SHOW_VALUE+5;}
         if(BTN_AUXO)       {t_press=true;show_par = "AUXO";show_time=SHOW_VALUE+5;}
         if(BTN_MICG)       {t_press=true;show_par = "MICG";show_time=SHOW_VALUE+5;}
@@ -155,17 +175,18 @@ void t_touched(){ //опрос тачскрина
         if(BTN_MORE)       {l_key=18;t_press=true;tap_name="MORE";}
         if(BTN_PTT)        {l_key=23;t_press=true;tap_name="CPTT";}
         if(BTN_RFG)        {t_press=true;show_par = "RF_G";show_time=SHOW_VALUE+5;}
+        if(BTN_SCAN)       {l_key=8;t_press=true;tap_name="Scan";}
       }
-      if(BTN_RIT)         {l_key=7;t_press=true;}//режим отстройки
-      if(BTN_FREQ_PLUS && !locked)   {l_key=2;t_press=true;}//+ SR/4 kHz
-      if(BTN_FREQ_PLUS_FULL && locked)   {l_key=2;t_press=true;}//+ SR/4 kHz
-      if(BTN_FREQ_MINUS && !locked)  {l_key=3;t_press=true;}//- SR/4 kHz
-      if(BTN_FREQ_MINUS_FULL && locked)  {l_key=3;t_press=true;}//- SR/4 kHz
-      if(BTN_VOL_PLUS && !locked)    {l_key=9;t_press=true;show_par="VOL_";}//+
-      if(BTN_VOL_PLUS_FULL && locked)    {l_key=9;t_press=true;show_par="VOL_";}//+
-      if(BTN_VOL_MINUS && !locked)   {l_key=10;t_press=true;show_par="VOL_";}//-
-      if(BTN_VOL_MINUS_FULL && locked)   {l_key=10;t_press=true;show_par="VOL_";}//-
-      if(BTN_SAVE_CONF)   {l_key=11;t_press=true;show_par = "PAR_";}//сохранение текущих параметров
+      if(BTN_RIT && !swr_scan)         {l_key=7;t_press=true;}//режим отстройки
+      if(BTN_FREQ_PLUS && !menu && !swr_scan)   {l_key=2;t_press=true;}//+ SR/4 kHz
+      if(BTN_FREQ_PLUS_FULL && menu && !swr_scan)   {l_key=2;t_press=true;}//+ SR/4 kHz
+      if(BTN_FREQ_MINUS && !menu && !swr_scan)  {l_key=3;t_press=true;}//- SR/4 kHz
+      if(BTN_FREQ_MINUS_FULL && menu && !swr_scan)  {l_key=3;t_press=true;}//- SR/4 kHz
+      if(BTN_VOL_PLUS && !menu && !swr_scan)    {l_key=9;t_press=true;show_par="VOL_";}//+
+      if(BTN_VOL_PLUS_FULL && menu && !swr_scan)    {l_key=9;t_press=true;show_par="VOL_";}//+
+      if(BTN_VOL_MINUS && !menu && !swr_scan)   {l_key=10;t_press=true;show_par="VOL_";}//-
+      if(BTN_VOL_MINUS_FULL && menu && !swr_scan)   {l_key=10;t_press=true;show_par="VOL_";}//-
+      if(BTN_SAVE_CONF && !swr_scan)   {l_key=11;t_press=true;show_par = "PAR_";}//сохранение текущих параметров
 
       if(BTN_SBAND){ //выбор диапазона
         int x=20;int y=80;
@@ -175,7 +196,7 @@ void t_touched(){ //опрос тачскрина
         }
       }
       if(BTN_CONTROL){l_key=20;t_press=true;}
-      if(BTN_BAND){l_key=22;t_press=true;}
+      if(BTN_BAND && !swr_scan){l_key=22;t_press=true;}
     }
     else{
       if(t_press&&l_key!=0){lkey=l_key;l_key=0;t_press=false;t_release=true;}
@@ -292,8 +313,8 @@ void write_parameters(bool first) {
     EEPROM.commit();
   }
   if (flag_write_parameters) {
-    EEPROM.writeUInt(8 * sizeof(uint32_t), (uint32_t)numband);
-    EEPROM.writeUInt(9 * sizeof(uint32_t), (uint32_t)freq);
+    EEPROM.writeUInt(8  * sizeof(uint32_t), (uint32_t)numband);
+    EEPROM.writeUInt(9  * sizeof(uint32_t), (uint32_t)freq);
     EEPROM.writeUInt(10 * sizeof(uint32_t), (uint32_t)numstep);
     EEPROM.writeUInt(11 * sizeof(uint32_t), (uint32_t)rf_power);
     EEPROM.writeUInt(12 * sizeof(uint32_t), (uint32_t)agc_speed);
