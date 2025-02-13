@@ -41,10 +41,9 @@ void setup()
   xTaskCreatePinnedToCore(x_uart_tx,"uart_tx",STACK_SIZE*2,NULL,11,NULL,0);
   delay(100);
   xTaskCreatePinnedToCore(x_encoder,"xencoder",STACK_SIZE/2, NULL, 13, NULL, 1);
-  delay(1000);
+  delay(100);
   xTaskCreatePinnedToCore(x_cat,"cat",STACK_SIZE, NULL, 14, NULL, 1);
-  delay(1000);
-  
+  delay(100);
   xSemaphoreGive(xUART);
 }
 

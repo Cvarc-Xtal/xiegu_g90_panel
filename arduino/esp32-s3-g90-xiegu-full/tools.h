@@ -91,7 +91,7 @@ void time_001() {
     if (old_smeter > 150)old_smeter = 150;
     peak_down();//инкремент показателей спектра и панорамы
     if(!power_button){show_par="____";}
-    /////
+    /////сканируем диапазон SWR
     if(!swr_switch && swr_scan)freq=swr_freq[swr_count];
     if(swr_switch && swr_scan){
       swr_value[swr_count]=from_body[2]+1;
