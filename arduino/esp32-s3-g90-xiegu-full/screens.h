@@ -66,7 +66,7 @@ void draw_spectr(){//спектр
       gfx->setCursor(3+xwin,110+ywin);gfx->print("4.0");
       gfx->setCursor(3+xwin, 90+ywin);gfx->print("5.0");
      }
-     if((txrx_mode==TX_MODE || txpower_g90>0) && !swr_scan){
+     if((txrx_mode==TX_MODE || txpower_g90>0 || tuning) && !swr_scan){
         gfx->setFont(&FreeMonoBold8pt8b);
         gfx->setTextColor(WHITE);
         gfx->setCursor(3+xwin,84+ywin);
