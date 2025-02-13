@@ -59,20 +59,20 @@ void draw_spectr(){//спектр
         p_x=x+xwin;p_y=175-y+ywin;
         x+=3;
       }
-      gfx->setFont(&FreeMonoBold8pt8b);gfx->setTextColor(WHITE);
+      gfx->setFont(&FreeMonoBold8pt8b);gfx->setTextColor(0b1000010000010000);
       gfx->setCursor(3+xwin,170+ywin);gfx->print("1.0");
-      gfx->setCursor(3+xwin,150+ywin);gfx->print("2.0");
-      gfx->setCursor(3+xwin,130+ywin);gfx->print("3.0");
-      gfx->setCursor(3+xwin,110+ywin);gfx->print("4.0");
-      gfx->setCursor(3+xwin, 90+ywin);gfx->print("5.0");
+      gfx->setCursor(3+xwin,153+ywin);gfx->print("2.0");
+      gfx->setCursor(3+xwin,136+ywin);gfx->print("3.0");
+      gfx->setCursor(3+xwin,119+ywin);gfx->print("4.0");
+      gfx->setCursor(3+xwin,102+ywin);gfx->print("5.0");
      }
-     if((txrx_mode==TX_MODE || txpower_g90>0 || tuning) && !swr_scan){
+     if(txrx_mode==TX_MODE || txpower_g90>0 || tuning || swr_scan){
         gfx->setFont(&FreeMonoBold8pt8b);
         gfx->setTextColor(WHITE);
-        gfx->setCursor(3+xwin,84+ywin);
+        gfx->setCursor(40+xwin,84+ywin);
         gfx->print("ALC: ");gfx->print(alc_g90);gfx->print("%");
-        gfx->setCursor(70+xwin,84+ywin);
-        gfx->print("     SWR: ");gfx->print(swr_s90);
+        gfx->setCursor(150+xwin,84+ywin);
+        gfx->print("SWR: ");gfx->print(swr_s90+1);
     }
 }
 
