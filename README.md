@@ -48,4 +48,3 @@ https://aliexpress.ru/item/1005006729377800.html?sku_id=12000038112486569&spm=a2
 <img src="settings_arduino.jpg" alt=""><br>
 
 Коротенькое видео:<br>
-<video src='1.mp4' width=180/>
