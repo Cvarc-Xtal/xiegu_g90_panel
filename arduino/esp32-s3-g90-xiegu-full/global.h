@@ -56,7 +56,7 @@ float sum_fft = 0.0f;
 float max_fft = 0.0f;
 float min_fft = 10000000.0f;
 float s_level = 0.0f;
-
+bool shift_en = true;
 struct tm timeinfo;
 const int   daylightOffset_sec = 0;
 

@@ -327,6 +327,28 @@ void write_parameters(bool first) {
   }
 }
 
+void shift_fft(bool right,int shift_hz){
+  int shift_points=shift_hz/((float)i2s_sample_rate_rx/(float)NUM_SAMPLE_BUF);
+  int k=0;
+  shift_en=false;
+  if(right){
+      for(int k=0;k<WP_LINE;k++){
+        for(int i=0;i<NUM_SAMPLE_BUF;i++){
+          if(i<NUM_SAMPLE_BUF-shift_points)wp[wp_num[k]][i]=wp[wp_num[k]][i+shift_points];
+          else wp[wp_num[k]][i]=0;
+        }
+      }
+  }else{
+      for(int k=0;k<WP_LINE;k++){
+        for(int i=NUM_SAMPLE_BUF-1;i>0;i--){
+          if(i>shift_points)wp[wp_num[k]][i]=wp[wp_num[k]][i-shift_points];
+          else wp[wp_num[k]][i]=0;
+        }
+   }
+  }
+  shift_en=true;
+}
+
 void x_encoder(void *args)
 {
   while(1){
@@ -367,10 +389,10 @@ void x_encoder(void *args)
       if (encoderDelta < 0){rf_gain-=1;if(rf_gain<1)rf_gain=1;show_time=SHOW_VALUE;}
      }
      if(show_par=="____"){
-      if ((encoderDelta > 0) && (tun_mode == TUN)){freq = freq + step_freq[numstep];if (freq > 39999999)freq = 39999999;bands[numband].freq=freq;rx_freq = freq;}
-      if ((encoderDelta < 0) && (tun_mode == TUN)){freq = freq - step_freq[numstep];if (freq < 100000)freq = 100000;bands[numband].freq=freq;rx_freq = freq;}
-      if ((encoderDelta > 0) && (tun_mode == RIT)){rx_freq = rx_freq + step_freq[numstep];if (rx_freq > 39999999)rx_freq = 39999999;bands[numband].freq=rx_freq;}
-      if ((encoderDelta < 0) && (tun_mode == RIT)){rx_freq = rx_freq - step_freq[numstep];if (rx_freq < 100000)freq = 100000;bands[numband].freq=rx_freq;}
+      if ((encoderDelta > 0) && (tun_mode == TUN)){shift_fft(true,step_freq[numstep]);freq = freq + step_freq[numstep];if (freq > 39999999)freq = 39999999;bands[numband].freq=freq;rx_freq = freq;}
+      if ((encoderDelta < 0) && (tun_mode == TUN)){shift_fft(false,step_freq[numstep]);freq = freq - step_freq[numstep];if (freq < 100000)freq = 100000;bands[numband].freq=freq;rx_freq = freq;}
+      if ((encoderDelta > 0) && (tun_mode == RIT)){shift_fft(true,step_freq[numstep]);rx_freq = rx_freq + step_freq[numstep];if (rx_freq > 39999999)rx_freq = 39999999;bands[numband].freq=rx_freq;}
+      if ((encoderDelta < 0) && (tun_mode == RIT)){shift_fft(false,step_freq[numstep]);rx_freq = rx_freq - step_freq[numstep];if (rx_freq < 100000)freq = 100000;bands[numband].freq=rx_freq;}
       }
     }
     if (txrx_mode == SETUP_MODE) { //реакция на поворот энкодера на 2 экране

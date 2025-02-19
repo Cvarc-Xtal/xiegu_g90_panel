@@ -53,16 +53,18 @@ void fft_for_display(uint8_t* input){
     sum_fft = 0.0f;
     max_fft = 0.0f;
     min_fft = 1000000000.0f;
+    uint8_t fft_value[NUM_SAMPLE_BUF];
     for (int i = 0 ; i < NUM_SAMPLE_BUF; i++) {
       if(input[i]>=limited_fft)input[i]=limited_fft;
       if (max_fft < input[i])max_fft=input[i];
       if (min_fft > input[i])min_fft=input[i];
+      fft_value[i]=input[i];
       //копирование магнитуд в отображаемый буфер,элементы которого постоянно уменьшаются
       if(input[i]<=fft_inter[i]) input[i]=fft_inter[i];
       if(input[i]>fft_inter[i])fft_inter[i] = input[i];
       //заполняем верхнюю строку массива для отображения "водопада"
       wp_value[i]=select_color(input[i],limited_fft);
-      wp[wp_num[0]][i]=wp_value[i];
-      sum_fft = sum_fft+input[i];
+      wp[wp_num[0]][i]=select_color(fft_value[i],limited_fft);
+      sum_fft = sum_fft+fft_value[i];
     }
 }

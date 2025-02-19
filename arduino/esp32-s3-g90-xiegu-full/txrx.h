@@ -26,7 +26,7 @@ void x_in(void *args)
             }
             fft_for_display((uint8_t*)&fft_g90); //готовим спектр и панораму
            }
-        if(txrx_mode==RX_MODE)scroll_wp();//сдвинуть панораму на 1 строку вниз
+        if(txrx_mode==RX_MODE && shift_en)scroll_wp();//сдвинуть панораму на 1 строку вниз
         xSemaphoreGive(xUART);
       }
     vTaskDelete(NULL);
